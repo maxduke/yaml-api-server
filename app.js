@@ -8,6 +8,11 @@ const path = require('path');
 
 const app = express();
 
+app.use(bodyParser.json());
+
+// Enable 'trust proxy' if your app is behind a proxy
+app.set('trust proxy', true);
+
 // Load user data from JSON file
 let users = [];
 fs.readFile('configs/users.json', (err, data) => {
@@ -69,8 +74,18 @@ app.post('/login', function(req, res) {
   res.send({ token });
 });
 
-// Use morgan for logging
-app.use(morgan(':date[iso] | :status | :remote-addr | :method | :url'));
+// Define a custom 'localdate' token
+morgan.token('localdate', function () {
+    return new Date();
+  });
+  
+// Define a custom 'ip' token
+morgan.token('ip', function (req) {
+    return req.ip;
+});
+
+// Use the 'localdate' and 'ip' tokens in your format string
+app.use(morgan('[:localdate] | :ip | :method | :url | :status | :res[content-length] - :response-time ms'));
 
 // Dynamically generate routes for each YAML file in the api directory
 fs.readdir('apis', (err, files) => {
